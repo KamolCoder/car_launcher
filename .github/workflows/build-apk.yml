@@ -1,0 +1,49 @@
+name: Build APK
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Scaffold Flutter project
+        run: |
+          flutter create --org uz.kamol --project-name car_launcher --platforms android app
+          cd app
+          flutter pub add flutter_riverpod geolocator
+
+      - name: Overlay sources
+        run: |
+          SRC=car_launcher
+          rm -rf app/lib
+          cp -r "$SRC/lib" app/lib
+          cp "$SRC/android/app/src/main/AndroidManifest.xml" app/android/app/src/main/AndroidManifest.xml
+          rm -f app/android/app/src/main/kotlin/uz/kamol/car_launcher/*.kt
+          cp "$SRC"/android/app/src/main/kotlin/uz/kamol/car_launcher/*.kt \
+             app/android/app/src/main/kotlin/uz/kamol/car_launcher/
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 29/' app/android/app/build.gradle.kts
+          grep -n "minSdk" app/android/app/build.gradle.kts
+
+      - name: Build release APK
+        working-directory: app
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: car_launcher-apk
+          path: app/build/app/outputs/flutter-apk/app-release.apk
