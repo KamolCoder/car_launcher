@@ -65,6 +65,7 @@ class CarModeService : Service() {
                     handler.removeCallbacks(ignitionOffRunnable)
                     handler.postDelayed(ignitionOffRunnable, OFF_DEBOUNCE_MS)
                 }
+                Intent.ACTION_BATTERY_CHANGED -> CarState.updateBattery(intent)
             }
         }
     }
@@ -78,6 +79,7 @@ class CarModeService : Service() {
         registerPowerReceiver()
         // Silent sync: no autoplay just because the app was (re)started
         CarState.update(isCharging())
+        CarState.readBattery(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -113,6 +115,7 @@ class CarModeService : Service() {
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_POWER_CONNECTED)
             addAction(Intent.ACTION_POWER_DISCONNECTED)
+            addAction(Intent.ACTION_BATTERY_CHANGED)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(powerReceiver, filter, Context.RECEIVER_NOT_EXPORTED)

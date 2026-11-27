@@ -38,8 +38,16 @@ object MediaHub {
     private var lastArtKey: String? = null
     private var pendingYandexPlay = false
 
-    /** Called on the main thread with a state map for Flutter. */
-    var onStateChanged: ((Map<String, Any?>) -> Unit)? = null
+    /** Called on the main thread with a state map for Flutter (one per Flutter engine). */
+    private val stateListeners = mutableSetOf<(Map<String, Any?>) -> Unit>()
+
+    fun addStateListener(listener: (Map<String, Any?>) -> Unit) {
+        stateListeners.add(listener)
+    }
+
+    fun removeStateListener(listener: (Map<String, Any?>) -> Unit) {
+        stateListeners.remove(listener)
+    }
 
     fun init(context: Context) {
         if (initialized) return
@@ -193,8 +201,9 @@ object MediaHub {
     }
 
     private fun emit() {
-        val callback = onStateChanged ?: return
-        callback(buildState(forceArt = false))
+        if (stateListeners.isEmpty()) return
+        val state = buildState(forceArt = false)
+        stateListeners.toList().forEach { it(state) }
     }
 
     private fun buildState(forceArt: Boolean): Map<String, Any?> {

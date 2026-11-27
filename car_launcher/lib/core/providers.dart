@@ -5,7 +5,9 @@ import 'platform/native_bridge.dart';
 
 final mediaStateProvider = StreamProvider<MediaState>((ref) => NativeBridge.mediaStates());
 
-final ignitionProvider = StreamProvider<bool>((ref) => NativeBridge.ignition());
+final carStatusProvider = StreamProvider<CarStatus>((ref) => NativeBridge.carStatus());
+
+final isDashboardProvider = FutureProvider<bool>((ref) => NativeBridge.isDashboard());
 
 /// Speed in km/h: m/s * 3.6. Below 0.5 m/s (~1.8 km/h) treated as 0 (GPS noise).
 /// Emits null when location permission is not granted.

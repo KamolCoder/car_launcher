@@ -13,14 +13,17 @@ import 'progress_bar.dart';
 import 'round_button.dart';
 
 class MusicPanel extends ConsumerWidget {
-  const MusicPanel({super.key});
+  const MusicPanel({super.key, this.compact = false});
+
+  /// Split screen: smaller buttons and fonts.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final media = ref.watch(mediaStateProvider);
     return Panel(
       child: media.when(
-        data: (state) => _MusicContent(state: state),
+        data: (state) => _MusicContent(state: state, compact: compact),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Ошибка плеера: $e')),
       ),
@@ -29,9 +32,10 @@ class MusicPanel extends ConsumerWidget {
 }
 
 class _MusicContent extends StatelessWidget {
-  const _MusicContent({required this.state});
+  const _MusicContent({required this.state, required this.compact});
 
   final MediaState state;
+  final bool compact;
 
   static const _swipeVelocity = 400.0;
 
@@ -77,8 +81,8 @@ class _MusicContent extends StatelessWidget {
                   },
                   child: _AlbumArt(art: state.art),
                 ),
-                const SizedBox(width: 28),
-                Expanded(child: _TrackInfo(state: state)),
+                SizedBox(width: compact ? 20 : 28),
+                Expanded(child: _TrackInfo(state: state, compact: compact)),
               ],
             ),
           ),
@@ -89,14 +93,22 @@ class _MusicContent extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const RoundButton(icon: Icons.skip_previous_rounded, size: 96, onTap: NativeBridge.previous),
+            RoundButton(
+              icon: Icons.skip_previous_rounded,
+              size: compact ? 80 : 96,
+              onTap: NativeBridge.previous,
+            ),
             RoundButton(
               icon: state.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              size: 128,
+              size: compact ? 104 : 128,
               filled: true,
               onTap: _onPlayPause,
             ),
-            const RoundButton(icon: Icons.skip_next_rounded, size: 96, onTap: NativeBridge.next),
+            RoundButton(
+              icon: Icons.skip_next_rounded,
+              size: compact ? 80 : 96,
+              onTap: NativeBridge.next,
+            ),
           ],
         ),
       ],
@@ -129,9 +141,10 @@ class _AlbumArt extends StatelessWidget {
 }
 
 class _TrackInfo extends StatelessWidget {
-  const _TrackInfo({required this.state});
+  const _TrackInfo({required this.state, required this.compact});
 
   final MediaState state;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -146,14 +159,14 @@ class _TrackInfo extends StatelessWidget {
           title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w700, height: 1.15),
+          style: TextStyle(fontSize: compact ? 30 : 40, fontWeight: FontWeight.w700, height: 1.15),
         ),
         const SizedBox(height: 12),
         Text(
           subtitle,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 28, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: compact ? 22 : 28, color: AppColors.textSecondary),
         ),
         if (state.hasSession) ...[
           const SizedBox(height: 16),

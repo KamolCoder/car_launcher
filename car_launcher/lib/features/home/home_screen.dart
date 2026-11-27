@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/platform/native_bridge.dart';
+import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../dock/dock.dart';
 import '../info/info_panel.dart';
 import '../music/music_panel.dart';
 import '../setup/setup_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
+  /// Below this width (dp) the split-screen layout is used.
+  static const _compactWidth = 900.0;
+
   bool _setupOk = true;
 
   @override
@@ -54,38 +59,61 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final dashboard = ref.watch(isDashboardProvider).when(
+          data: (v) => v,
+          loading: () => false,
+          error: (_, __) => false,
+        );
+
     // Launcher: back button must not close it
     return PopScope(
       canPop: false,
       child: Scaffold(
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                if (!_setupOk) ...[
-                  _SetupBanner(onTap: _openSetup),
-                  const SizedBox(height: 16),
-                ],
-                const Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(flex: 3, child: MusicPanel()),
-                      SizedBox(width: 20),
-                      Expanded(flex: 2, child: InfoPanel()),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < _compactWidth;
+              final gap = compact ? 16.0 : 20.0;
+              return Padding(
+                padding: EdgeInsets.all(gap),
+                child: Column(
+                  children: [
+                    if (!_setupOk) ...[
+                      _SetupBanner(onTap: _openSetup),
+                      const SizedBox(height: 16),
                     ],
-                  ),
+                    Expanded(child: compact ? _compactBody(gap) : _wideBody(gap)),
+                    SizedBox(height: gap),
+                    Dock(onSettings: _openSetup, compact: compact, dashboard: dashboard),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                Dock(onSettings: _openSetup),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
+
+  /// Full screen: music left, clock + speed right.
+  Widget _wideBody(double gap) => Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Expanded(flex: 3, child: MusicPanel()),
+          SizedBox(width: gap),
+          const Expanded(flex: 2, child: InfoPanel()),
+        ],
+      );
+
+  /// Split screen: music on top, clock + speed in one row below.
+  Widget _compactBody(double gap) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Expanded(flex: 3, child: MusicPanel(compact: true)),
+          SizedBox(height: gap),
+          const Expanded(flex: 2, child: InfoPanel(horizontal: true)),
+        ],
+      );
 }
 
 class _SetupBanner extends StatelessWidget {
