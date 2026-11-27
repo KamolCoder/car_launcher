@@ -1,0 +1,41 @@
+# Car Launcher
+
+Car head-unit launcher for Galaxy Tab S9: Yandex Music control via MediaSession, GPS speed, clock, dock,
+autostart on ignition (charger connected).
+
+## Setup
+
+```bash
+flutter create --org uz.kamol --platforms android car_launcher
+cd car_launcher
+flutter pub add flutter_riverpod geolocator
+```
+
+Copy from this archive over the generated project:
+
+- `lib/` — whole folder (delete generated `lib/main.dart` first)
+- `android/app/src/main/AndroidManifest.xml`
+- `android/app/src/main/kotlin/uz/kamol/car_launcher/*.kt` (replaces generated `MainActivity.kt`)
+
+In `android/app/build.gradle.kts` set:
+
+```kotlin
+defaultConfig {
+    minSdk = 29
+}
+```
+
+Run: `flutter run --release`
+
+## On the tablet
+
+1. Open the app → Settings (dock) → grant everything marked red:
+   notification access, display over other apps, location, default launcher, battery "Unrestricted".
+2. Android settings: lock screen "None" or "Swipe", screen timeout 30 s – 1 min.
+3. Open Yandex Music once and start any track (so its media session exists).
+
+## Logic
+
+- Charger connected for 1.5 s → ignition ON → launcher to front (wakes screen) → Yandex Music play.
+- Charger gone for 8 s → ignition OFF → pause, screen allowed to sleep (system timeout).
+  8 s debounce ignores the power drop while cranking the starter.
