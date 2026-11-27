@@ -171,7 +171,12 @@ class NativeBridge {
 
   static Future<void> exitSplit() => _system.invokeMethod('exitSplit');
 
-  static Future<bool> openDialer() => _bool('openDialer');
+  /// NewPipe -> YouTube (split screen) -> m.youtube.com.
+  static Future<bool> openVideo() => _bool('openVideo');
+
+  static Future<String?> getPref(String key) => _system.invokeMethod<String>('getPref', {'key': key});
+  static Future<void> setPref(String key, String value) =>
+      _system.invokeMethod('setPref', {'key': key, 'value': value});
 
   /// Alice from the Yandex app (default assistant if set, else the app itself).
   static Future<bool> openAlice() => _bool('openAlice');

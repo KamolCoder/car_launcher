@@ -51,7 +51,7 @@ class StatusBar extends ConsumerWidget {
 /// 3-4 bars white, 2 yellow, 0-1 red.
 Color _signalColor(int level) {
   if (level >= 3) return Colors.white;
-  if (level == 2) return AppColors.accent;
+  if (level == 2) return AppColors.warning;
   return AppColors.error;
 }
 
@@ -166,7 +166,7 @@ class _Battery extends StatelessWidget {
   /// Charging green; otherwise >=50 green, 20-49 yellow, <20 red.
   Color get _color {
     if (charging || level >= 50) return AppColors.ok;
-    if (level >= 20) return AppColors.accent;
+    if (level >= 20) return AppColors.warning;
     return AppColors.error;
   }
 

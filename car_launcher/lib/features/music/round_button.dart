@@ -20,7 +20,7 @@ class RoundButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: filled ? AppColors.accent : AppColors.surfaceHigh,
+      color: filled ? Theme.of(context).colorScheme.primary : AppColors.surfaceHigh,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../core/platform/native_bridge.dart';
 import '../../core/providers.dart';
+import '../../core/settings.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/panel.dart';
 
@@ -108,6 +109,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
           : ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                const _AppearanceSetup(),
                 _SetupTile(
                   title: 'Доступ к уведомлениям',
                   subtitle: 'Трек, обложка и управление Яндекс Музыкой',
@@ -229,7 +231,7 @@ class _AliceSetup extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            const Icon(Icons.mic_rounded, color: AppColors.accent, size: 40),
+            Icon(Icons.mic_rounded, color: Theme.of(context).colorScheme.primary, size: 40),
             const SizedBox(width: 20),
             const Expanded(
               child: Column(
@@ -362,6 +364,93 @@ class _HotspotSetup extends ConsumerWidget {
               style: FilledButton.styleFrom(minimumSize: const Size(180, 64)),
               child: Text(ok ? 'Изменить' : 'Настроить', style: const TextStyle(fontSize: 22)),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Accent color (match the car's interior lighting) and night dimming.
+class _AppearanceSetup extends ConsumerWidget {
+  const _AppearanceSetup();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(uiSettingsProvider);
+    final notifier = ref.read(uiSettingsProvider.notifier);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Panel(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Цвет подсветки', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              children: [
+                for (final accent in AccentChoice.values)
+                  _ColorChip(
+                    accent: accent,
+                    selected: accent == settings.accent,
+                    onTap: () => notifier.setAccent(accent),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Text('Ночной режим (приглушить экран)', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            SegmentedButton<NightMode>(
+              segments: [
+                for (final mode in NightMode.values)
+                  ButtonSegment(
+                    value: mode,
+                    label: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(mode.label, style: const TextStyle(fontSize: 20)),
+                    ),
+                  ),
+              ],
+              selected: {settings.nightMode},
+              showSelectedIcon: false,
+              onSelectionChanged: (s) => notifier.setNightMode(s.first),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorChip extends StatelessWidget {
+  const _ColorChip({required this.accent, required this.selected, required this.onTap});
+
+  final AccentChoice accent;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 10, 20, 10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceHigh,
+          borderRadius: BorderRadius.circular(40),
+          border: Border.all(color: selected ? accent.color : Colors.transparent, width: 3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(radius: 18, backgroundColor: accent.color),
+            const SizedBox(width: 12),
+            Text(accent.label, style: const TextStyle(fontSize: 20)),
           ],
         ),
       ),

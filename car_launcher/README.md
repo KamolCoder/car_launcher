@@ -37,7 +37,7 @@ Run: `flutter run --release`
 
 ## Split screen
 
-Dock → «Навигатор» opens Yandex Navigator in split screen next to the launcher.
+Dock → «Навигатор» / «YouTube» (NewPipe → YouTube → m.youtube.com) open in split screen next to the launcher.
 The home task can't be split, so `DashboardActivity` (same Flutter UI, normal resizeable task) is started
 and it launches Navigator with `FLAG_ACTIVITY_LAUNCH_ADJACENT`. Below 900 dp width the UI switches to the
 compact layout; «Полный экран» returns to the home launcher.
@@ -55,6 +55,16 @@ and keep it in «Never sleeping apps».
 Settings → «Модем iPhone»: SSID + password → `WifiNetworkSuggestion` (priority max, Android asks once to allow).
 Status bar 📱: green = connected to that SSID (SSID needs location permission), red = not, tap → Wi-Fi panel.
 The iPhone side (turning the hotspot on) is an iOS Shortcuts automation: Driving Focus / NFC tag / charger.
+
+## Appearance
+
+Settings → «Цвет подсветки» (default cyan `#00E5FF`, Spark M300 interior lighting) and «Ночной режим»
+(auto 19:00–07:00 / always / off: 30% black layer over the UI). Stored in SharedPreferences `ui`.
+
+## CI signing
+
+Repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` → `ci/patch_signing.py`
+adds a release signing config, so every CI build installs over the previous one. Without them: debug key.
 
 ## Logic
 

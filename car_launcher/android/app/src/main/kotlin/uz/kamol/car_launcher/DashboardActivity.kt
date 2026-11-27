@@ -2,6 +2,7 @@ package uz.kamol.car_launcher
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -17,6 +18,11 @@ class DashboardActivity : BaseCarActivity() {
 
         /** Delay so this activity is resumed full-screen before the adjacent launch. */
         private const val ADJACENT_DELAY_MS = 400L
+
+        /** True while the dashboard is visible in multi-window (split) mode. */
+        @Volatile
+        var inSplit: Boolean = false
+            private set
 
         fun start(context: Context, adjacentPackage: String) {
             val intent = Intent(context, DashboardActivity::class.java)
@@ -44,12 +50,19 @@ class DashboardActivity : BaseCarActivity() {
 
     override fun onResume() {
         super.onResume()
+        inSplit = isInMultiWindowMode
         val pkg = pendingPackage ?: return
         pendingPackage = null
         handler.postDelayed({ SystemActions.launchAdjacent(this, pkg) }, ADJACENT_DELAY_MS)
     }
 
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
+        inSplit = isInMultiWindowMode
+    }
+
     override fun onDestroy() {
+        inSplit = false
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }

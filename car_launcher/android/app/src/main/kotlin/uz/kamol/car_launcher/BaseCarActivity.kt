@@ -147,7 +147,16 @@ abstract class BaseCarActivity : FlutterActivity() {
                 "openOverlaySettings" -> result.success(SystemActions.openOverlaySettings(ctx))
                 "openHomeSettings" -> result.success(SystemActions.openHomeSettings(ctx))
                 "openAppSettings" -> result.success(SystemActions.openAppSettings(ctx))
-                "openDialer" -> result.success(SystemActions.openDialer(ctx))
+                "openVideo" -> result.success(SystemActions.openVideo(ctx))
+                "getPref" -> result.success(
+                    prefs().getString(call.argument<String>("key").orEmpty(), null),
+                )
+                "setPref" -> {
+                    prefs().edit()
+                        .putString(call.argument<String>("key").orEmpty(), call.argument<String>("value"))
+                        .apply()
+                    result.success(null)
+                }
                 "openAlice" -> result.success(SystemActions.openAlice(ctx))
                 "openAssistantSettings" -> result.success(SystemActions.openAssistantSettings(ctx))
                 "launchApp" -> {
@@ -188,6 +197,9 @@ abstract class BaseCarActivity : FlutterActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PHONE_PERMISSION_REQUEST) StatusMonitor.refresh()
     }
+
+    /** UI settings (accent color, night mode) shared by both activities. */
+    private fun prefs() = getSharedPreferences("ui", MODE_PRIVATE)
 
     /** Ignition ON -> keep screen on. OFF -> system screen timeout turns it off. */
     private fun applyScreenFlags(ignitionOn: Boolean) {

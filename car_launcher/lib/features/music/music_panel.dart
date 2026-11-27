@@ -222,7 +222,7 @@ class _TrackInfo extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             AppConfig.appName(state.packageName),
-            style: const TextStyle(fontSize: 18, color: AppColors.accent),
+            style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary),
           ),
         ],
       ],
@@ -235,20 +235,21 @@ class _AccessHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.accent),
+        border: Border.all(color: accent),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.lock_outline_rounded, color: AppColors.accent),
-          SizedBox(width: 12),
-          Expanded(
+          Icon(Icons.lock_outline_rounded, color: accent),
+          const SizedBox(width: 12),
+          const Expanded(
             child: Text('Нет доступа к уведомлениям — трек не отображается', style: TextStyle(fontSize: 18)),
           ),
-          TextButton(
+          const TextButton(
             onPressed: NativeBridge.openNotificationAccessSettings,
             child: Text('Дать доступ', style: TextStyle(fontSize: 18)),
           ),

@@ -38,7 +38,7 @@ class Dock extends StatelessWidget {
       _DockItem(Icons.music_note_rounded, 'Музыка',
           () => _launch(context, AppConfig.yandexMusic, 'Яндекс Музыка')),
       _DockItem(Icons.mic_rounded, 'Алиса', () => openAlice(context)),
-      _DockItem(Icons.phone_rounded, 'Телефон', NativeBridge.openDialer),
+      _DockItem(Icons.smart_display_rounded, 'YouTube', NativeBridge.openVideo),
       _DockItem(Icons.settings_rounded, 'Настройки', onSettings),
     ];
 

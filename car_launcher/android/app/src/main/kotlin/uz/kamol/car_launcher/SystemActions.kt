@@ -14,12 +14,41 @@ import android.util.Log
 object SystemActions {
     private const val TAG = "SystemActions"
 
-    /** Requires "Display over other apps" when called from background (Android 10+). */
+    /**
+     * Launcher to front without breaking split screen: if the dashboard is in split, it is brought
+     * to front (split stays), else the full-screen home launcher.
+     * Requires "Display over other apps" when called from background (Android 10+).
+     */
     fun bringLauncherToFront(context: Context) {
+        val target = if (DashboardActivity.inSplit) DashboardActivity::class.java else MainActivity::class.java
+        val intent = Intent(context, target)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        safeStart(context, intent)
+    }
+
+    /** Always the full-screen home launcher (used by "Full screen"). */
+    private fun bringHomeToFront(context: Context) {
         val intent = Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         safeStart(context, intent)
     }
+
+    // region Video (YouTube)
+
+    /** Light ad-free client first, then official YouTube. */
+    private val VIDEO_PACKAGES = listOf(
+        "org.schabi.newpipe", // NewPipe (F-Droid / GitHub)
+        "com.google.android.youtube",
+    )
+
+    /** NewPipe -> YouTube (both in split screen) -> m.youtube.com in the browser. */
+    fun openVideo(activity: Activity): Boolean {
+        val pkg = VIDEO_PACKAGES.firstOrNull { activity.packageManager.getLaunchIntentForPackage(it) != null }
+        if (pkg != null && openSplit(activity, pkg)) return true
+        return safeStart(activity, Intent(Intent.ACTION_VIEW, Uri.parse("https://m.youtube.com")))
+    }
+
+    // endregion
 
     fun launchApp(context: Context, packageName: String): Boolean {
         val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return false
@@ -56,7 +85,7 @@ object SystemActions {
 
     /** Back to the full-screen home launcher; the other app stays in recents. */
     fun exitSplit(activity: Activity) {
-        bringLauncherToFront(activity)
+        bringHomeToFront(activity)
         if (activity is DashboardActivity) activity.finishAndRemoveTask()
     }
 
@@ -130,9 +159,6 @@ object SystemActions {
     fun openWifiPanel(context: Context): Boolean =
         safeStart(context, Intent(Settings.Panel.ACTION_WIFI)) ||
             safeStart(context, Intent(Settings.ACTION_WIFI_SETTINGS))
-
-    fun openDialer(context: Context): Boolean =
-        safeStart(context, Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 
     fun hasOverlayPermission(context: Context): Boolean = Settings.canDrawOverlays(context)
 

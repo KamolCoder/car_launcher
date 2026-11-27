@@ -39,10 +39,30 @@ jobs:
           cp -r "$SRC/android/app/src/main/res/." app/android/app/src/main/res/
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 29/' app/android/app/build.gradle.kts
           grep -n "minSdk" app/android/app/build.gradle.kts
+          python3 ci/patch_signing.py app/android/app/build.gradle.kts
+
+      # Persistent key from repo secrets -> every build installs over the previous one.
+      # Without the secrets the APK is signed with the runner's (random) debug key.
+      - name: Decode signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/car_launcher.jks"
+            echo "CL_KEYSTORE=$RUNNER_TEMP/car_launcher.jks" >> "$GITHUB_ENV"
+            echo "Signing with the persistent key"
+          else
+            echo "::warning::KEYSTORE_BASE64 secret not set - APK signed with a random debug key"
+          fi
 
       - name: Build release APK
         working-directory: app
-        run: flutter build apk --release
+        env:
+          CL_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          CL_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          CL_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        # build number = run number, so each APK is newer than the previous one
+        run: flutter build apk --release --build-number=${{ github.run_number }}
 
       - uses: actions/upload-artifact@v4
         with:

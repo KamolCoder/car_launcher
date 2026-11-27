@@ -120,14 +120,17 @@ class CarModeService : Service() {
         handler.removeCallbacks(lockRunnable)
         holdScreen() // wakes the screen and keeps it on whatever app is in front
         MediaHub.releaseAudioFocus()
-        SystemActions.bringLauncherToFront(this)
+        SystemActions.bringLauncherToFront(this) // split screen: dashboard to front, split stays
         handler.postDelayed({ MediaHub.ensureYandexPlaying() }, 1_000)
     }
 
-    /** Stop all audio -> launcher to front (other apps go to background) -> lock. */
+    /**
+     * Stop all audio -> launcher to front (other apps go to background) -> lock.
+     * In split screen the layout is kept, so it comes back as it was on the next ignition ON.
+     */
     private fun runIgnitionOffActions() {
         MediaHub.pauseAll()
-        SystemActions.bringLauncherToFront(this)
+        if (!DashboardActivity.inSplit) SystemActions.bringLauncherToFront(this)
         handler.removeCallbacks(lockRunnable)
         handler.postDelayed(lockRunnable, LOCK_DELAY_MS)
     }
