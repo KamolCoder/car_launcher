@@ -1,5 +1,6 @@
 package uz.kamol.car_launcher
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -22,6 +23,39 @@ object SystemActions {
         val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return false
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return safeStart(context, intent)
+    }
+
+    /**
+     * Split screen: [packageName] on one side, DashboardActivity on the other.
+     * The home task can't be split, so the dashboard (a normal task) is started first
+     * and it launches the app with FLAG_ACTIVITY_LAUNCH_ADJACENT once resumed.
+     */
+    fun openSplit(activity: Activity, packageName: String): Boolean {
+        if (activity.packageManager.getLaunchIntentForPackage(packageName) == null) return false
+        return if (activity is DashboardActivity) {
+            launchAdjacent(activity, packageName)
+        } else {
+            try {
+                DashboardActivity.start(activity, packageName)
+                true
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot start dashboard", e)
+                false
+            }
+        }
+    }
+
+    /** Opens the app next to [activity]; existing task (e.g. active route) is reused. */
+    fun launchAdjacent(activity: Activity, packageName: String): Boolean {
+        val intent = activity.packageManager.getLaunchIntentForPackage(packageName) ?: return false
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
+        return safeStart(activity, intent)
+    }
+
+    /** Back to the full-screen home launcher; the other app stays in recents. */
+    fun exitSplit(activity: Activity) {
+        bringLauncherToFront(activity)
+        if (activity is DashboardActivity) activity.finishAndRemoveTask()
     }
 
     fun openDialer(context: Context): Boolean =
@@ -56,7 +90,7 @@ object SystemActions {
     )
 
     private fun safeStart(context: Context, intent: Intent): Boolean = try {
-        if (context !is android.app.Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
         true
     } catch (e: Exception) {

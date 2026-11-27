@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/platform/native_bridge.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/panel.dart';
@@ -10,27 +11,34 @@ import '../../core/widgets/panel.dart';
 const _tabular = [FontFeature.tabularFigures()];
 
 class InfoPanel extends StatelessWidget {
-  const InfoPanel({super.key});
+  const InfoPanel({super.key, this.horizontal = false});
+
+  /// Split screen: clock and speed side by side instead of stacked.
+  final bool horizontal;
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: Panel(child: ClockWidget())),
-        SizedBox(height: 20),
-        Expanded(
-          child: Panel(
-            child: Stack(
-              children: [
-                Center(child: SpeedWidget()),
-                Positioned(top: 0, right: 0, child: IgnitionIndicator()),
-              ],
-            ),
-          ),
+    const clock = Expanded(child: Panel(child: ClockWidget()));
+    const speed = Expanded(
+      child: Panel(
+        child: Stack(
+          children: [
+            Center(child: SpeedWidget()),
+            Positioned(top: 0, right: 0, child: StatusIndicators()),
+          ],
         ),
-      ],
+      ),
     );
+
+    return horizontal
+        ? const Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [clock, SizedBox(width: 16), speed],
+          )
+        : const Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [clock, SizedBox(height: 20), speed],
+          );
   }
 }
 
@@ -124,24 +132,53 @@ class SpeedWidget extends ConsumerWidget {
   }
 }
 
-class IgnitionIndicator extends ConsumerWidget {
-  const IgnitionIndicator({super.key});
+/// Ignition state + battery percent (top-right corner of the speed panel).
+class StatusIndicators extends ConsumerWidget {
+  const StatusIndicators({super.key});
+
+  static const _lowBattery = 20;
+
+  static IconData _batteryIcon(int level, bool charging) {
+    if (charging) return Icons.battery_charging_full_rounded;
+    if (level >= 90) return Icons.battery_full_rounded;
+    if (level >= 75) return Icons.battery_6_bar_rounded;
+    if (level >= 60) return Icons.battery_5_bar_rounded;
+    if (level >= 45) return Icons.battery_4_bar_rounded;
+    if (level >= 30) return Icons.battery_3_bar_rounded;
+    if (level >= _lowBattery) return Icons.battery_2_bar_rounded;
+    return Icons.battery_alert_rounded;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final on = ref.watch(ignitionProvider).when(
+    final status = ref.watch(carStatusProvider).when(
           data: (v) => v,
-          loading: () => false,
-          error: (_, __) => false,
+          loading: () => CarStatus.unknown,
+          error: (_, __) => CarStatus.unknown,
         );
-    final color = on ? AppColors.ok : AppColors.textSecondary;
+    final on = status.ignitionOn;
+    final ignitionColor = on ? AppColors.ok : AppColors.textSecondary;
+
+    final level = status.batteryLevel;
+    final batteryColor = level >= 0 && level < _lowBattery && !status.charging
+        ? AppColors.error
+        : (status.charging ? AppColors.ok : AppColors.textSecondary);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(on ? Icons.bolt_rounded : Icons.local_parking_rounded, color: color, size: 24),
+        Icon(on ? Icons.bolt_rounded : Icons.local_parking_rounded, color: ignitionColor, size: 24),
         const SizedBox(width: 6),
-        Text(on ? 'Зажигание' : 'Парковка', style: TextStyle(fontSize: 18, color: color)),
+        Text(on ? 'Зажигание' : 'Парковка', style: TextStyle(fontSize: 18, color: ignitionColor)),
+        if (level >= 0) ...[
+          const SizedBox(width: 16),
+          Icon(_batteryIcon(level, status.charging), color: batteryColor, size: 24),
+          const SizedBox(width: 4),
+          Text(
+            '$level%',
+            style: TextStyle(fontSize: 18, color: batteryColor, fontFeatures: _tabular),
+          ),
+        ],
       ],
     );
   }

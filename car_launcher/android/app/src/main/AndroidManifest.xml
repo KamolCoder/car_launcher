@@ -53,6 +53,23 @@
             </intent-filter>
         </activity>
 
+        <!-- Split-screen copy of the launcher: own task, resizeable, not HOME -->
+        <activity
+            android:name=".DashboardActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:taskAffinity="uz.kamol.car_launcher.dashboard"
+            android:theme="@style/LaunchTheme"
+            android:windowSoftInputMode="adjustResize">
+
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+        </activity>
+
         <!-- Gives access to active media sessions (Yandex Music etc.) -->
         <service
             android:name=".MediaListenerService"

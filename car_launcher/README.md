@@ -34,6 +34,13 @@ Run: `flutter run --release`
 2. Android settings: lock screen "None" or "Swipe", screen timeout 30 s – 1 min.
 3. Open Yandex Music once and start any track (so its media session exists).
 
+## Split screen
+
+Dock → «Навигатор» opens Yandex Navigator in split screen next to the launcher.
+The home task can't be split, so `DashboardActivity` (same Flutter UI, normal resizeable task) is started
+and it launches Navigator with `FLAG_ACTIVITY_LAUNCH_ADJACENT`. Below 900 dp width the UI switches to the
+compact layout; «Полный экран» returns to the home launcher.
+
 ## Logic
 
 - Charger connected for 1.5 s → ignition ON → launcher to front (wakes screen) → Yandex Music play.

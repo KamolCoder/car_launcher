@@ -39,6 +39,19 @@ class MediaState {
   }
 }
 
+/// Ignition + battery from CarState.kt.
+class CarStatus {
+  const CarStatus({required this.ignitionOn, required this.batteryLevel, required this.charging});
+
+  static const unknown = CarStatus(ignitionOn: false, batteryLevel: -1, charging: false);
+
+  final bool ignitionOn;
+
+  /// 0..100, -1 = unknown.
+  final int batteryLevel;
+  final bool charging;
+}
+
 /// Platform channels to the Kotlin side (MainActivity.kt).
 class NativeBridge {
   NativeBridge._();
@@ -79,8 +92,14 @@ class NativeBridge {
     });
   }
 
-  static Stream<bool> ignition() =>
-      _ignition.receiveBroadcastStream().map((e) => e as bool);
+  static Stream<CarStatus> carStatus() => _ignition.receiveBroadcastStream().map((event) {
+        final m = Map<Object?, Object?>.from(event as Map);
+        return CarStatus(
+          ignitionOn: m['on'] as bool? ?? false,
+          batteryLevel: (m['level'] as num?)?.toInt() ?? -1,
+          charging: m['charging'] as bool? ?? false,
+        );
+      });
 
   // System
   static Future<bool> hasNotificationAccess() => _bool('hasNotificationAccess');
@@ -95,6 +114,15 @@ class NativeBridge {
       _system.invokeMethod('openOverlaySettings');
   static Future<void> openHomeSettings() => _system.invokeMethod('openHomeSettings');
   static Future<void> openAppSettings() => _system.invokeMethod('openAppSettings');
+
+  /// True when running in DashboardActivity (split-screen copy of the launcher).
+  static Future<bool> isDashboard() => _bool('isDashboard');
+
+  /// Opens [packageName] in split screen next to the launcher dashboard.
+  static Future<bool> openSplit(String packageName) async =>
+      await _system.invokeMethod<bool>('openSplit', {'package': packageName}) ?? false;
+
+  static Future<void> exitSplit() => _system.invokeMethod('exitSplit');
 
   static Future<bool> openDialer() => _bool('openDialer');
   static Future<bool> launchApp(String packageName) async =>
