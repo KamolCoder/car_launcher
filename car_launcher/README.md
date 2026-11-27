@@ -44,9 +44,11 @@ compact layout; «Полный экран» returns to the home launcher.
 
 ## Alice
 
-Dock «Алиса» / mic button in split screen → `ACTION_VOICE_COMMAND` to the default assistant if it is a Yandex app
-(`com.yandex.searchapp`, `ru.yandex.searchplugin`), else the Yandex app's voice activity, else launches the app.
-Hands-free «Слушай, Алиса»: Yandex app → Settings → Voice activation; keep Yandex in «Never sleeping apps».
+Dock «Алиса» / mic button in split screen → `ACTION_VOICE_COMMAND` to the standalone «Алиса AI» app
+(`com.yandex.aliceapp`), else its main screen, else Play Store. «Яндекс — с Алисой» (`com.yandex.searchapp`)
+is not used: it opens its browser UI instead of voice mode.
+Hands-free «Слушай, Алиса»: Alice AI → Settings → Voice activation; set it as default digital assistant
+and keep it in «Never sleeping apps».
 
 ## Logic
 

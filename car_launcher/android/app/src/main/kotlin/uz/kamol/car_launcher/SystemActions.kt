@@ -96,30 +96,25 @@ object SystemActions {
 
     // region Alice
 
-    /** Yandex apps that contain Alice, in priority order. */
-    private val ALICE_PACKAGES = listOf(
-        "com.yandex.searchapp", // "Яндекс с Алисой"
-        "ru.yandex.searchplugin", // older "Яндекс"
-    )
+    /**
+     * Standalone "Алиса AI" app. The old "Яндекс — с Алисой" (com.yandex.searchapp) opens its browser UI
+     * instead of voice mode, so it is not used.
+     */
+    const val ALICE_PACKAGE = "com.yandex.aliceapp"
 
     /**
-     * Opens Alice listening.
-     * 1. Default assistant (Yandex set as digital assistant) -> ACTION_VOICE_COMMAND, opens over the current app.
-     * 2. Voice command activity inside a Yandex app.
-     * 3. Just launch the Yandex app.
+     * Opens Alice in voice mode: ACTION_VOICE_COMMAND addressed to Alice AI, else its main screen.
+     * Not installed -> Play Store page, returns false.
      */
     fun openAlice(context: Context): Boolean {
         val pm = context.packageManager
-        val assistant = Intent(Intent.ACTION_VOICE_COMMAND)
-        val resolved = pm.resolveActivity(assistant, 0)?.activityInfo?.packageName
-        if (resolved != null && resolved in ALICE_PACKAGES && safeStart(context, assistant)) return true
+        val voice = Intent(Intent.ACTION_VOICE_COMMAND).setPackage(ALICE_PACKAGE)
+        if (pm.resolveActivity(voice, 0) != null && safeStart(context, voice)) return true
+        if (launchApp(context, ALICE_PACKAGE)) return true
 
-        for (pkg in ALICE_PACKAGES) {
-            val voice = Intent(Intent.ACTION_VOICE_COMMAND).setPackage(pkg)
-            if (pm.resolveActivity(voice, 0) != null && safeStart(context, voice)) return true
-        }
-        for (pkg in ALICE_PACKAGES) {
-            if (launchApp(context, pkg)) return true
+        val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$ALICE_PACKAGE"))
+        if (!safeStart(context, market)) {
+            safeStart(context, Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$ALICE_PACKAGE")))
         }
         return false
     }

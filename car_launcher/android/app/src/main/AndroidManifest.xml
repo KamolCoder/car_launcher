@@ -22,8 +22,7 @@
         <package android:name="ru.yandex.music" />
         <package android:name="ru.yandex.yandexnavi" />
         <package android:name="ru.yandex.yandexmaps" />
-        <package android:name="com.yandex.searchapp" />
-        <package android:name="ru.yandex.searchplugin" />
+        <package android:name="com.yandex.aliceapp" />
         <intent>
             <action android:name="android.intent.action.VOICE_COMMAND" />
         </intent>
