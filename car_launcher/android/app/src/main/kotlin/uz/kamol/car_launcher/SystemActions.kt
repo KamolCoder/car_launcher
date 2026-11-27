@@ -94,6 +94,43 @@ object SystemActions {
 
     // endregion
 
+    // region Alice
+
+    /** Yandex apps that contain Alice, in priority order. */
+    private val ALICE_PACKAGES = listOf(
+        "com.yandex.searchapp", // "Яндекс с Алисой"
+        "ru.yandex.searchplugin", // older "Яндекс"
+    )
+
+    /**
+     * Opens Alice listening.
+     * 1. Default assistant (Yandex set as digital assistant) -> ACTION_VOICE_COMMAND, opens over the current app.
+     * 2. Voice command activity inside a Yandex app.
+     * 3. Just launch the Yandex app.
+     */
+    fun openAlice(context: Context): Boolean {
+        val pm = context.packageManager
+        val assistant = Intent(Intent.ACTION_VOICE_COMMAND)
+        val resolved = pm.resolveActivity(assistant, 0)?.activityInfo?.packageName
+        if (resolved != null && resolved in ALICE_PACKAGES && safeStart(context, assistant)) return true
+
+        for (pkg in ALICE_PACKAGES) {
+            val voice = Intent(Intent.ACTION_VOICE_COMMAND).setPackage(pkg)
+            if (pm.resolveActivity(voice, 0) != null && safeStart(context, voice)) return true
+        }
+        for (pkg in ALICE_PACKAGES) {
+            if (launchApp(context, pkg)) return true
+        }
+        return false
+    }
+
+    /** "Default apps" screen: Digital assistant app -> Яндекс. */
+    fun openAssistantSettings(context: Context): Boolean =
+        safeStart(context, Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)) ||
+            safeStart(context, Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+
+    // endregion
+
     fun openDialer(context: Context): Boolean =
         safeStart(context, Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 

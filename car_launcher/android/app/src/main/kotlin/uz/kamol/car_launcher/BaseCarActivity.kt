@@ -148,6 +148,8 @@ abstract class BaseCarActivity : FlutterActivity() {
                 "openHomeSettings" -> result.success(SystemActions.openHomeSettings(ctx))
                 "openAppSettings" -> result.success(SystemActions.openAppSettings(ctx))
                 "openDialer" -> result.success(SystemActions.openDialer(ctx))
+                "openAlice" -> result.success(SystemActions.openAlice(ctx))
+                "openAssistantSettings" -> result.success(SystemActions.openAssistantSettings(ctx))
                 "launchApp" -> {
                     val pkg = call.argument<String>("package")
                     result.success(pkg != null && SystemActions.launchApp(ctx, pkg))

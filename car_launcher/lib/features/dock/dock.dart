@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/alice.dart';
 import '../../core/config.dart';
 import '../../core/platform/native_bridge.dart';
 import '../../core/theme.dart';
@@ -36,6 +37,7 @@ class Dock extends StatelessWidget {
           () => _launch(context, AppConfig.yandexMaps, 'Яндекс Карты')),
       _DockItem(Icons.music_note_rounded, 'Музыка',
           () => _launch(context, AppConfig.yandexMusic, 'Яндекс Музыка')),
+      _DockItem(Icons.mic_rounded, 'Алиса', () => openAlice(context)),
       _DockItem(Icons.phone_rounded, 'Телефон', NativeBridge.openDialer),
       _DockItem(Icons.settings_rounded, 'Настройки', onSettings),
     ];

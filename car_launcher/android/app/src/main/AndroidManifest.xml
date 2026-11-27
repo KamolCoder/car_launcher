@@ -22,6 +22,11 @@
         <package android:name="ru.yandex.music" />
         <package android:name="ru.yandex.yandexnavi" />
         <package android:name="ru.yandex.yandexmaps" />
+        <package android:name="com.yandex.searchapp" />
+        <package android:name="ru.yandex.searchplugin" />
+        <intent>
+            <action android:name="android.intent.action.VOICE_COMMAND" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.DIAL" />
         </intent>

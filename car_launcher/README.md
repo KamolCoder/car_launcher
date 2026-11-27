@@ -42,6 +42,12 @@ The home task can't be split, so `DashboardActivity` (same Flutter UI, normal re
 and it launches Navigator with `FLAG_ACTIVITY_LAUNCH_ADJACENT`. Below 900 dp width the UI switches to the
 compact layout; «Полный экран» returns to the home launcher.
 
+## Alice
+
+Dock «Алиса» / mic button in split screen → `ACTION_VOICE_COMMAND` to the default assistant if it is a Yandex app
+(`com.yandex.searchapp`, `ru.yandex.searchplugin`), else the Yandex app's voice activity, else launches the app.
+Hands-free «Слушай, Алиса»: Yandex app → Settings → Voice activation; keep Yandex in «Never sleeping apps».
+
 ## Logic
 
 - Charger connected for 1.5 s → ignition ON → launcher to front (wakes screen) → Yandex Music play.

@@ -150,6 +150,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
                   ok: s.phone,
                   onFix: _fixPhone,
                 ),
+                const _AliceSetup(),
                 const SizedBox(height: 12),
                 const Panel(
                   child: Text(
@@ -208,6 +209,47 @@ class _SetupTile extends StatelessWidget {
                 style: FilledButton.styleFrom(minimumSize: const Size(180, 64)),
                 child: const Text('Настроить', style: TextStyle(fontSize: 22)),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Alice by voice ("Слушай, Алиса") is configured in the Yandex app, not here.
+class _AliceSetup extends StatelessWidget {
+  const _AliceSetup();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Panel(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const Icon(Icons.mic_rounded, color: AppColors.accent, size: 40),
+            const SizedBox(width: 20),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Алиса', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 4),
+                  Text(
+                    '1. Ассистент по умолчанию → «Яндекс» (кнопка справа): Алиса откроется поверх лаунчера\n'
+                    '2. Приложение Яндекс → Настройки → Голосовая активация → вкл. («Слушай, Алиса»)\n'
+                    '3. Батарея → «Никогда не спящие» → добавить Яндекс',
+                    style: TextStyle(fontSize: 18, height: 1.4, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            FilledButton(
+              onPressed: NativeBridge.openAssistantSettings,
+              style: FilledButton.styleFrom(minimumSize: const Size(180, 64)),
+              child: const Text('Настроить', style: TextStyle(fontSize: 22)),
+            ),
           ],
         ),
       ),

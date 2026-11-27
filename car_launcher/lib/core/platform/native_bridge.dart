@@ -154,6 +154,10 @@ class NativeBridge {
   static Future<void> exitSplit() => _system.invokeMethod('exitSplit');
 
   static Future<bool> openDialer() => _bool('openDialer');
+
+  /// Alice from the Yandex app (default assistant if set, else the app itself).
+  static Future<bool> openAlice() => _bool('openAlice');
+  static Future<void> openAssistantSettings() => _system.invokeMethod('openAssistantSettings');
   static Future<bool> launchApp(String packageName) async =>
       await _system.invokeMethod<bool>('launchApp', {'package': packageName}) ?? false;
 

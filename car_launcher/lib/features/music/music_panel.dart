@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/alice.dart';
 import '../../core/config.dart';
 import '../../core/platform/native_bridge.dart';
 import '../../core/providers.dart';
@@ -76,6 +77,18 @@ class MusicSplitPanel extends ConsumerWidget {
                 ),
                 const SizedBox(height: 32),
                 MusicControls(state: state),
+                const SizedBox(height: 32),
+                Center(
+                  child: FilledButton.tonalIcon(
+                    onPressed: () => openAlice(context),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(220, 72),
+                      shape: const StadiumBorder(),
+                    ),
+                    icon: const Icon(Icons.mic_rounded, size: 36),
+                    label: const Text('Алиса', style: TextStyle(fontSize: 26)),
+                  ),
+                ),
               ],
             ),
           );
