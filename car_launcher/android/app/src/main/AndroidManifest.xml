@@ -100,6 +100,21 @@
             </intent-filter>
         </receiver>
 
+        <!-- Device admin: lock the tablet on ignition OFF -->
+        <receiver
+            android:name=".LockAdminReceiver"
+            android:description="@string/lock_admin_description"
+            android:exported="true"
+            android:label="Car Launcher: блокировка экрана"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

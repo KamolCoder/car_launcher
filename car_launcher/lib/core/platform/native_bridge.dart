@@ -115,6 +115,10 @@ class NativeBridge {
   static Future<void> openHomeSettings() => _system.invokeMethod('openHomeSettings');
   static Future<void> openAppSettings() => _system.invokeMethod('openAppSettings');
 
+  /// Device admin for locking the tablet on ignition OFF.
+  static Future<bool> isLockAdmin() => _bool('isLockAdmin');
+  static Future<void> requestLockAdmin() => _system.invokeMethod('requestLockAdmin');
+
   /// True when running in DashboardActivity (split-screen copy of the launcher).
   static Future<bool> isDashboard() => _bool('isDashboard');
 

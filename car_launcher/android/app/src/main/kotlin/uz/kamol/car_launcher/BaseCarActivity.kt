@@ -130,6 +130,8 @@ abstract class BaseCarActivity : FlutterActivity() {
                     val pkg = call.argument<String>("package")
                     result.success(pkg != null && SystemActions.launchApp(ctx, pkg))
                 }
+                "isLockAdmin" -> result.success(SystemActions.isLockAdmin(ctx))
+                "requestLockAdmin" -> result.success(SystemActions.requestLockAdmin(ctx))
                 "isDashboard" -> result.success(isDashboard)
                 "openSplit" -> {
                     val pkg = call.argument<String>("package")

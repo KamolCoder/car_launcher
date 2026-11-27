@@ -16,6 +16,7 @@ Copy from this archive over the generated project:
 - `lib/` — whole folder (delete generated `lib/main.dart` first)
 - `android/app/src/main/AndroidManifest.xml`
 - `android/app/src/main/kotlin/uz/kamol/car_launcher/*.kt` (replaces generated `MainActivity.kt`)
+- `android/app/src/main/res/` (merge: `xml/device_admin.xml`, `values/car_launcher_strings.xml`)
 
 In `android/app/build.gradle.kts` set:
 
@@ -44,5 +45,8 @@ compact layout; «Полный экран» returns to the home launcher.
 ## Logic
 
 - Charger connected for 1.5 s → ignition ON → launcher to front (wakes screen) → Yandex Music play.
-- Charger gone for 8 s → ignition OFF → pause, screen allowed to sleep (system timeout).
+- While ignition is ON the service holds a screen wake lock → screen stays on whatever app is in front.
+- Charger gone for 8 s → ignition OFF → pause all media sessions + take audio focus (other players stop),
+  launcher to front, release wake lock, `DevicePolicyManager.lockNow()` after 1.5 s.
   8 s debounce ignores the power drop while cranking the starter.
+  Without device admin (Settings → «Блокировка экрана») the system screen timeout turns the screen off.

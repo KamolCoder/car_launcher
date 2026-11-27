@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaController
@@ -95,6 +97,54 @@ object MediaHub {
     fun pause() {
         val c = controller ?: return
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause()
+    }
+
+    /** Ignition OFF: pause every active session, not only the tracked one. */
+    fun pauseAll() {
+        if (!initialized) return
+        pendingYandexPlay = false
+        activeSessions().forEach { session ->
+            try {
+                if (session.playbackState?.state == PlaybackState.STATE_PLAYING) session.transportControls.pause()
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot pause ${session.packageName}", e)
+            }
+        }
+        // Fallback when sessions are not visible (no notification access)
+        dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE)
+        takeAudioFocus()
+    }
+
+    private var focusRequest: AudioFocusRequest? = null
+
+    /**
+     * Permanent audio focus: well-behaved players pause themselves on AUDIOFOCUS_LOSS,
+     * including those without a visible media session.
+     */
+    private fun takeAudioFocus() {
+        if (focusRequest != null) return
+        val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build(),
+            )
+            .setOnAudioFocusChangeListener { change ->
+                // Someone (user or ignition ON) started playback -> we no longer hold focus
+                if (change == AudioManager.AUDIOFOCUS_LOSS) focusRequest = null
+            }
+            .build()
+        if (audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            focusRequest = request
+        }
+    }
+
+    /** Ignition ON: give focus back so Yandex Music can play. */
+    fun releaseAudioFocus() {
+        if (!initialized) return
+        focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+        focusRequest = null
     }
 
     fun toggle() {

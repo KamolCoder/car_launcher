@@ -36,6 +36,7 @@ jobs:
           rm -f app/android/app/src/main/kotlin/uz/kamol/car_launcher/*.kt
           cp "$SRC"/android/app/src/main/kotlin/uz/kamol/car_launcher/*.kt \
              app/android/app/src/main/kotlin/uz/kamol/car_launcher/
+          cp -r "$SRC/android/app/src/main/res/." app/android/app/src/main/res/
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 29/' app/android/app/build.gradle.kts
           grep -n "minSdk" app/android/app/build.gradle.kts
 

@@ -1,5 +1,6 @@
 package uz.kamol.car_launcher
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,6 +16,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.util.Log
 
 /**
@@ -36,6 +38,9 @@ class CarModeService : Service() {
         /** Cranking the starter drops power for a moment -> ignore short drops. */
         private const val OFF_DEBOUNCE_MS = 8_000L
 
+        /** Time for players to pause and the launcher to come to front before locking. */
+        private const val LOCK_DELAY_MS = 1_500L
+
         fun start(context: Context, fromBoot: Boolean) {
             val intent = Intent(context, CarModeService::class.java).putExtra(EXTRA_FROM_BOOT, fromBoot)
             try {
@@ -48,6 +53,14 @@ class CarModeService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var receiverRegistered = false
+
+    private var screenLock: PowerManager.WakeLock? = null
+
+    private val lockRunnable = Runnable {
+        if (CarState.ignitionOn) return@Runnable // power came back meanwhile
+        releaseScreen()
+        SystemActions.lockNow(this) // no device admin -> system screen timeout turns it off
+    }
 
     private val ignitionOnRunnable = Runnable { onIgnition(true) }
     private val ignitionOffRunnable = Runnable { onIgnition(false) }
@@ -80,6 +93,7 @@ class CarModeService : Service() {
         // Silent sync: no autoplay just because the app was (re)started
         CarState.update(isCharging())
         CarState.readBattery(this)
+        if (CarState.ignitionOn) holdScreen()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -91,6 +105,7 @@ class CarModeService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
+        releaseScreen()
         if (receiverRegistered) unregisterReceiver(powerReceiver)
         receiverRegistered = false
         super.onDestroy()
@@ -102,13 +117,39 @@ class CarModeService : Service() {
     }
 
     private fun runIgnitionOnActions() {
-        SystemActions.bringLauncherToFront(this) // wakes the screen (setTurnScreenOn in MainActivity)
+        handler.removeCallbacks(lockRunnable)
+        holdScreen() // wakes the screen and keeps it on whatever app is in front
+        MediaHub.releaseAudioFocus()
+        SystemActions.bringLauncherToFront(this)
         handler.postDelayed({ MediaHub.ensureYandexPlaying() }, 1_000)
     }
 
+    /** Stop all audio -> launcher to front (other apps go to background) -> lock. */
     private fun runIgnitionOffActions() {
-        MediaHub.pause()
-        // Screen: MainActivity clears FLAG_KEEP_SCREEN_ON -> system screen timeout turns it off
+        MediaHub.pauseAll()
+        SystemActions.bringLauncherToFront(this)
+        handler.removeCallbacks(lockRunnable)
+        handler.postDelayed(lockRunnable, LOCK_DELAY_MS)
+    }
+
+    /** Screen stays on while ignition is ON, even with Navigator full screen. */
+    @Suppress("DEPRECATION") // SCREEN_BRIGHT_WAKE_LOCK: still the only way for a non-activity
+    @SuppressLint("WakelockTimeout") // held for the whole trip, released on ignition OFF
+    private fun holdScreen() {
+        if (screenLock?.isHeld == true) return
+        val pm = getSystemService(PowerManager::class.java)
+        screenLock = pm.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "car_launcher:screen",
+        ).apply {
+            setReferenceCounted(false)
+            acquire()
+        }
+    }
+
+    private fun releaseScreen() {
+        screenLock?.let { if (it.isHeld) it.release() }
+        screenLock = null
     }
 
     private fun registerPowerReceiver() {

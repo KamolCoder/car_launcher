@@ -21,6 +21,7 @@ class _SetupStatus {
     required this.location,
     required this.defaultLauncher,
     required this.battery,
+    required this.lockAdmin,
   });
 
   final bool notifications;
@@ -28,6 +29,7 @@ class _SetupStatus {
   final bool location;
   final bool defaultLauncher;
   final bool battery;
+  final bool lockAdmin;
 }
 
 class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingObserver {
@@ -59,6 +61,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
       _hasLocation(),
       NativeBridge.isDefaultLauncher(),
       NativeBridge.isIgnoringBatteryOptimizations(),
+      NativeBridge.isLockAdmin(),
     ]);
     if (!mounted) return;
     setState(() => _status = _SetupStatus(
@@ -67,6 +70,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
           location: r[2],
           defaultLauncher: r[3],
           battery: r[4],
+          lockAdmin: r[5],
         ));
   }
 
@@ -125,12 +129,18 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
                   ok: s.battery,
                   onFix: NativeBridge.openAppSettings,
                 ),
+                _SetupTile(
+                  title: 'Блокировка экрана',
+                  subtitle: 'Планшет блокируется сразу после выключения зажигания (администратор устройства)',
+                  ok: s.lockAdmin,
+                  onFix: NativeBridge.requestLockAdmin,
+                ),
                 const SizedBox(height: 12),
                 const Panel(
                   child: Text(
                     'Также в настройках Android:\n'
                     '• Экран блокировки → «Нет» или «Провести» (иначе экран не разблокируется сам)\n'
-                    '• Тайм-аут экрана → 30 сек–1 мин (экран гаснет после выключения зажигания)',
+                    '• Тайм-аут экрана → 30 сек–1 мин (запасной вариант, если блокировка не включена)',
                     style: TextStyle(fontSize: 20, height: 1.5, color: AppColors.textSecondary),
                   ),
                 ),

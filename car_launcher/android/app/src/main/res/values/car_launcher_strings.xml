@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lock_admin_description">Блокирует планшет при выключении зажигания (пропало питание от авто)</string>
+</resources>

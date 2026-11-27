@@ -1,6 +1,8 @@
 package uz.kamol.car_launcher
 
 import android.app.Activity
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -57,6 +59,40 @@ object SystemActions {
         bringLauncherToFront(activity)
         if (activity is DashboardActivity) activity.finishAndRemoveTask()
     }
+
+    // region Lock (device admin)
+
+    private fun adminComponent(context: Context) = ComponentName(context, LockAdminReceiver::class.java)
+
+    fun isLockAdmin(context: Context): Boolean {
+        val dpm = context.getSystemService(DevicePolicyManager::class.java)
+        return dpm.isAdminActive(adminComponent(context))
+    }
+
+    /** System dialog "Activate device admin app". */
+    fun requestLockAdmin(context: Context): Boolean = safeStart(
+        context,
+        Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+            .putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent(context))
+            .putExtra(
+                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                "Нужно, чтобы планшет блокировался сразу после выключения зажигания",
+            ),
+    )
+
+    /** Screen off + lock right now. Returns false if device admin is not active. */
+    fun lockNow(context: Context): Boolean {
+        if (!isLockAdmin(context)) return false
+        return try {
+            context.getSystemService(DevicePolicyManager::class.java).lockNow()
+            true
+        } catch (e: SecurityException) {
+            Log.w(TAG, "lockNow failed", e)
+            false
+        }
+    }
+
+    // endregion
 
     fun openDialer(context: Context): Boolean =
         safeStart(context, Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
