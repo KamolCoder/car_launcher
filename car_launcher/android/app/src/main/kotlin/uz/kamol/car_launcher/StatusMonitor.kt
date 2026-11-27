@@ -7,6 +7,8 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.wifi.WifiInfo
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.telephony.SignalStrength
 import android.telephony.TelephonyCallback
@@ -31,6 +33,11 @@ object StatusMonitor {
 
     @Volatile
     var cellLevel: Int = -1
+        private set
+
+    /** Connected Wi-Fi name (needs location permission + location on), null if unknown. */
+    @Volatile
+    var wifiSsid: String? = null
         private set
 
     /** "5G", "LTE+", "LTE", "3G", "2G" or null (unknown / no READ_PHONE_STATE). */
@@ -69,6 +76,7 @@ object StatusMonitor {
 
     fun snapshot(): Map<String, Any?> = mapOf(
         "wifiLevel" to wifiLevel,
+        "wifiSsid" to wifiSsid,
         "cellLevel" to cellLevel,
         "cellType" to cellType,
     )
@@ -112,24 +120,52 @@ object StatusMonitor {
         else -> 0
     }
 
+    private fun onWifiCaps(caps: NetworkCapabilities) {
+        // For Wi-Fi, signalStrength is RSSI in dBm
+        val level = wifiBars(caps.signalStrength)
+        val ssid = readSsid(caps)
+        if (level != wifiLevel || ssid != wifiSsid) {
+            wifiLevel = level
+            wifiSsid = ssid
+            emit()
+        }
+    }
+
+    private fun onWifiLost() {
+        if (wifiLevel != -1 || wifiSsid != null) {
+            wifiLevel = -1
+            wifiSsid = null
+            emit()
+        }
+    }
+
+    /** "\"iPhone Kamol\"" -> "iPhone Kamol"; "<unknown ssid>" (no location access) -> null. */
+    private fun cleanSsid(raw: String?): String? {
+        val ssid = raw?.removeSurrounding("\"") ?: return null
+        return if (ssid.isBlank() || ssid == "<unknown ssid>") null else ssid
+    }
+
+    @Suppress("DEPRECATION") // WifiManager.connectionInfo: only way below Android 12
+    private fun readSsid(caps: NetworkCapabilities): String? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return cleanSsid((caps.transportInfo as? WifiInfo)?.ssid)
+        }
+        return cleanSsid(appContext.getSystemService(WifiManager::class.java)?.connectionInfo?.ssid)
+    }
+
     private fun registerWifi() {
         val cm = appContext.getSystemService(ConnectivityManager::class.java)
         val request = NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build()
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
-                // For Wi-Fi, signalStrength is RSSI in dBm
-                val level = wifiBars(caps.signalStrength)
-                if (level != wifiLevel) {
-                    wifiLevel = level
-                    emit()
-                }
+        // Android 12+: SSID is redacted unless the callback asks for location info
+        val callback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            object : ConnectivityManager.NetworkCallback(ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO) {
+                override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = onWifiCaps(caps)
+                override fun onLost(network: Network) = onWifiLost()
             }
-
-            override fun onLost(network: Network) {
-                if (wifiLevel != -1) {
-                    wifiLevel = -1
-                    emit()
-                }
+        } else {
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = onWifiCaps(caps)
+                override fun onLost(network: Network) = onWifiLost()
             }
         }
         try {

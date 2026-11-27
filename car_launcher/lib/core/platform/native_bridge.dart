@@ -54,11 +54,19 @@ class CarStatus {
 
 /// Wi-Fi / cellular signal from StatusMonitor.kt. Levels 0..4, -1 = none.
 class SignalStatus {
-  const SignalStatus({required this.wifiLevel, required this.cellLevel, required this.cellType});
+  const SignalStatus({
+    required this.wifiLevel,
+    required this.wifiSsid,
+    required this.cellLevel,
+    required this.cellType,
+  });
 
-  static const none = SignalStatus(wifiLevel: -1, cellLevel: -1, cellType: null);
+  static const none = SignalStatus(wifiLevel: -1, wifiSsid: null, cellLevel: -1, cellType: null);
 
   final int wifiLevel;
+
+  /// Connected Wi-Fi name; null if not connected or unknown (no location permission).
+  final String? wifiSsid;
   final int cellLevel;
 
   /// "5G", "LTE+", "LTE", "3G", "2G" or null.
@@ -119,6 +127,7 @@ class NativeBridge {
         final m = Map<Object?, Object?>.from(event as Map);
         return SignalStatus(
           wifiLevel: (m['wifiLevel'] as num?)?.toInt() ?? -1,
+          wifiSsid: m['wifiSsid'] as String?,
           cellLevel: (m['cellLevel'] as num?)?.toInt() ?? -1,
           cellType: m['cellType'] as String?,
         );
@@ -143,6 +152,15 @@ class NativeBridge {
   /// Device admin for locking the tablet on ignition OFF.
   static Future<bool> isLockAdmin() => _bool('isLockAdmin');
   static Future<void> requestLockAdmin() => _system.invokeMethod('requestLockAdmin');
+
+  /// iPhone hotspot name saved in the launcher, null if not set.
+  static Future<String?> getHotspotSsid() => _system.invokeMethod<String>('getHotspotSsid');
+
+  /// Saves the hotspot and registers it as a Wi-Fi suggestion. Returns an error text or null.
+  static Future<String?> saveHotspot(String ssid, String password) =>
+      _system.invokeMethod<String>('saveHotspot', {'ssid': ssid, 'password': password});
+
+  static Future<void> openWifiPanel() => _system.invokeMethod('openWifiPanel');
 
   /// True when running in DashboardActivity (split-screen copy of the launcher).
   static Future<bool> isDashboard() => _bool('isDashboard');

@@ -150,6 +150,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
                   ok: s.phone,
                   onFix: _fixPhone,
                 ),
+                const _HotspotSetup(),
                 const _AliceSetup(),
                 const SizedBox(height: 12),
                 const Panel(
@@ -250,6 +251,116 @@ class _AliceSetup extends StatelessWidget {
               onPressed: NativeBridge.openAssistantSettings,
               style: FilledButton.styleFrom(minimumSize: const Size(180, 64)),
               child: const Text('Настроить', style: TextStyle(fontSize: 22)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// iPhone hotspot name + password -> WifiNetworkSuggestion (auto-join when the iPhone broadcasts).
+class _HotspotSetup extends ConsumerWidget {
+  const _HotspotSetup();
+
+  Future<void> _edit(BuildContext context, WidgetRef ref, String? current) async {
+    final ssid = TextEditingController(text: current ?? '');
+    final password = TextEditingController();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Модем iPhone', style: TextStyle(fontSize: 26)),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: ssid,
+                style: const TextStyle(fontSize: 22),
+                decoration: const InputDecoration(
+                  labelText: 'Имя сети (iPhone → Настройки → Основные → Об этом устройстве → Имя)',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: password,
+                obscureText: true,
+                style: const TextStyle(fontSize: 22),
+                decoration: const InputDecoration(labelText: 'Пароль режима модема'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена', style: TextStyle(fontSize: 20)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Сохранить', style: TextStyle(fontSize: 20)),
+          ),
+        ],
+      ),
+    );
+    if (saved != true) return;
+
+    final error = await NativeBridge.saveHotspot(ssid.text, password.text);
+    ref.invalidate(hotspotSsidProvider);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error ?? 'Сохранено. Если Android спросит «Разрешить предлагаемые сети?» — разрешите',
+          style: const TextStyle(fontSize: 20),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ssid = ref.watch(hotspotSsidProvider).when(
+          data: (v) => v,
+          loading: () => null,
+          error: (_, __) => null,
+        );
+    final ok = ssid != null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Panel(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Icon(
+              ok ? Icons.phone_iphone_rounded : Icons.error_rounded,
+              color: ok ? AppColors.ok : AppColors.error,
+              size: 40,
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ok ? 'Модем iPhone: $ssid' : 'Модем iPhone',
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Планшет сам подключается, как только iPhone включает режим модема. '
+                    'Значок 📱 в строке статуса: зелёный — подключён, красный — нажмите, чтобы открыть Wi-Fi',
+                    style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            FilledButton(
+              onPressed: () => _edit(context, ref, ssid),
+              style: FilledButton.styleFrom(minimumSize: const Size(180, 64)),
+              child: Text(ok ? 'Изменить' : 'Настроить', style: const TextStyle(fontSize: 22)),
             ),
           ],
         ),

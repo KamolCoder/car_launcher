@@ -126,6 +126,11 @@ object SystemActions {
 
     // endregion
 
+    /** Quick Wi-Fi panel over the current app (Android 10+). */
+    fun openWifiPanel(context: Context): Boolean =
+        safeStart(context, Intent(Settings.Panel.ACTION_WIFI)) ||
+            safeStart(context, Intent(Settings.ACTION_WIFI_SETTINGS))
+
     fun openDialer(context: Context): Boolean =
         safeStart(context, Intent(Intent.ACTION_DIAL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 

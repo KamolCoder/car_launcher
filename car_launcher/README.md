@@ -50,6 +50,12 @@ is not used: it opens its browser UI instead of voice mode.
 Hands-free «Слушай, Алиса»: Alice AI → Settings → Voice activation; set it as default digital assistant
 and keep it in «Never sleeping apps».
 
+## iPhone hotspot
+
+Settings → «Модем iPhone»: SSID + password → `WifiNetworkSuggestion` (priority max, Android asks once to allow).
+Status bar 📱: green = connected to that SSID (SSID needs location permission), red = not, tap → Wi-Fi panel.
+The iPhone side (turning the hotspot on) is an iOS Shortcuts automation: Driving Focus / NFC tag / charger.
+
 ## Logic
 
 - Charger connected for 1.5 s → ignition ON → launcher to front (wakes screen) → Yandex Music play.

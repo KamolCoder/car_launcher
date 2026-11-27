@@ -21,6 +21,7 @@ class StatusBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final car = _value(ref.watch(carStatusProvider), CarStatus.unknown);
     final signal = _value(ref.watch(signalProvider), SignalStatus.none);
+    final hotspot = _value(ref.watch(hotspotSsidProvider), null);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -29,6 +30,10 @@ class StatusBar extends ConsumerWidget {
         if (signal.cellLevel >= 0) ...[
           const SizedBox(width: 24),
           _Cellular(level: signal.cellLevel, type: signal.cellType),
+        ],
+        if (hotspot != null) ...[
+          const SizedBox(width: 24),
+          _Iphone(connected: signal.wifiSsid == hotspot),
         ],
         if (signal.wifiLevel >= 0) ...[
           const SizedBox(width: 24),
@@ -114,6 +119,24 @@ class _Bars extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// iPhone hotspot: green when the tablet is on it, red (tap -> Wi-Fi panel) when not.
+class _Iphone extends StatelessWidget {
+  const _Iphone({required this.connected});
+
+  final bool connected;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(
+      connected ? Icons.phone_iphone_rounded : Icons.phonelink_off_rounded,
+      color: connected ? AppColors.ok : AppColors.error,
+      size: _iconSize,
+    );
+    if (connected) return icon;
+    return GestureDetector(onTap: NativeBridge.openWifiPanel, child: icon);
   }
 }
 

@@ -161,6 +161,15 @@ abstract class BaseCarActivity : FlutterActivity() {
                     requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), PHONE_PERMISSION_REQUEST)
                     result.success(null)
                 }
+                "getHotspotSsid" -> result.success(HotspotConfig.ssid(ctx))
+                "saveHotspot" -> result.success(
+                    HotspotConfig.save(
+                        ctx,
+                        call.argument<String>("ssid").orEmpty(),
+                        call.argument<String>("password").orEmpty(),
+                    ),
+                )
+                "openWifiPanel" -> result.success(SystemActions.openWifiPanel(ctx))
                 "isDashboard" -> result.success(isDashboard)
                 "openSplit" -> {
                     val pkg = call.argument<String>("package")
