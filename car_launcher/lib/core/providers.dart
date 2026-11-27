@@ -7,6 +7,8 @@ final mediaStateProvider = StreamProvider<MediaState>((ref) => NativeBridge.medi
 
 final carStatusProvider = StreamProvider<CarStatus>((ref) => NativeBridge.carStatus());
 
+final signalProvider = StreamProvider<SignalStatus>((ref) => NativeBridge.signal());
+
 final isDashboardProvider = FutureProvider<bool>((ref) => NativeBridge.isDashboard());
 
 /// Speed in km/h: m/s * 3.6. Below 0.5 m/s (~1.8 km/h) treated as 0 (GPS noise).

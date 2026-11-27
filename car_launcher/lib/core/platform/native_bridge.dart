@@ -52,6 +52,19 @@ class CarStatus {
   final bool charging;
 }
 
+/// Wi-Fi / cellular signal from StatusMonitor.kt. Levels 0..4, -1 = none.
+class SignalStatus {
+  const SignalStatus({required this.wifiLevel, required this.cellLevel, required this.cellType});
+
+  static const none = SignalStatus(wifiLevel: -1, cellLevel: -1, cellType: null);
+
+  final int wifiLevel;
+  final int cellLevel;
+
+  /// "5G", "LTE+", "LTE", "3G", "2G" or null.
+  final String? cellType;
+}
+
 /// Platform channels to the Kotlin side (MainActivity.kt).
 class NativeBridge {
   NativeBridge._();
@@ -60,6 +73,7 @@ class NativeBridge {
   static const _mediaState = EventChannel('car_launcher/media_state');
   static const _system = MethodChannel('car_launcher/system');
   static const _ignition = EventChannel('car_launcher/ignition');
+  static const _status = EventChannel('car_launcher/status');
 
   // Media commands
   static Future<void> play() => _media.invokeMethod('play');
@@ -101,7 +115,18 @@ class NativeBridge {
         );
       });
 
+  static Stream<SignalStatus> signal() => _status.receiveBroadcastStream().map((event) {
+        final m = Map<Object?, Object?>.from(event as Map);
+        return SignalStatus(
+          wifiLevel: (m['wifiLevel'] as num?)?.toInt() ?? -1,
+          cellLevel: (m['cellLevel'] as num?)?.toInt() ?? -1,
+          cellType: m['cellType'] as String?,
+        );
+      });
+
   // System
+  static Future<bool> hasPhonePermission() => _bool('hasPhonePermission');
+  static Future<void> requestPhonePermission() => _system.invokeMethod('requestPhonePermission');
   static Future<bool> hasNotificationAccess() => _bool('hasNotificationAccess');
   static Future<bool> hasOverlayPermission() => _bool('hasOverlayPermission');
   static Future<bool> isDefaultLauncher() => _bool('isDefaultLauncher');

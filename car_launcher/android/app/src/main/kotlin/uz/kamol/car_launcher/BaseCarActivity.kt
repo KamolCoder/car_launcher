@@ -1,5 +1,6 @@
 package uz.kamol.car_launcher
 
+import android.Manifest
 import android.os.Bundle
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -18,6 +19,8 @@ abstract class BaseCarActivity : FlutterActivity() {
         private const val MEDIA_STATE_CHANNEL = "car_launcher/media_state"
         private const val SYSTEM_CHANNEL = "car_launcher/system"
         private const val IGNITION_CHANNEL = "car_launcher/ignition"
+        private const val STATUS_CHANNEL = "car_launcher/status"
+        private const val PHONE_PERMISSION_REQUEST = 42
     }
 
     /** True for the split-screen dashboard. */
@@ -25,6 +28,7 @@ abstract class BaseCarActivity : FlutterActivity() {
 
     private var carSink: EventChannel.EventSink? = null
     private var mediaListener: ((Map<String, Any?>) -> Unit)? = null
+    private var statusListener: ((Map<String, Any?>) -> Unit)? = null
 
     private val ignitionListener: (Boolean) -> Unit = { on ->
         runOnUiThread {
@@ -54,6 +58,7 @@ abstract class BaseCarActivity : FlutterActivity() {
         super.onResume()
         MediaHub.refresh() // user may have just granted notification access
         CarState.readBattery(this)
+        StatusMonitor.refresh()
         applyScreenFlags(CarState.ignitionOn)
     }
 
@@ -62,6 +67,8 @@ abstract class BaseCarActivity : FlutterActivity() {
         CarState.removeBatteryListener(batteryListener)
         mediaListener?.let { MediaHub.removeStateListener(it) }
         mediaListener = null
+        statusListener?.let { StatusMonitor.removeListener(it) }
+        statusListener = null
         super.onDestroy()
     }
 
@@ -114,6 +121,21 @@ abstract class BaseCarActivity : FlutterActivity() {
             }
         })
 
+        // Map: {wifiLevel: Int, cellLevel: Int (0..4, -1 none), cellType: String?}
+        EventChannel(messenger, STATUS_CHANNEL).setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                statusListener?.let { StatusMonitor.removeListener(it) }
+                val listener: (Map<String, Any?>) -> Unit = { state -> runOnUiThread { events.success(state) } }
+                statusListener = listener
+                StatusMonitor.addListener(this@BaseCarActivity, listener)
+            }
+
+            override fun onCancel(arguments: Any?) {
+                statusListener?.let { StatusMonitor.removeListener(it) }
+                statusListener = null
+            }
+        })
+
         MethodChannel(messenger, SYSTEM_CHANNEL).setMethodCallHandler { call, result ->
             val ctx = this@BaseCarActivity
             when (call.method) {
@@ -132,6 +154,11 @@ abstract class BaseCarActivity : FlutterActivity() {
                 }
                 "isLockAdmin" -> result.success(SystemActions.isLockAdmin(ctx))
                 "requestLockAdmin" -> result.success(SystemActions.requestLockAdmin(ctx))
+                "hasPhonePermission" -> result.success(StatusMonitor.hasPhonePermission())
+                "requestPhonePermission" -> {
+                    requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), PHONE_PERMISSION_REQUEST)
+                    result.success(null)
+                }
                 "isDashboard" -> result.success(isDashboard)
                 "openSplit" -> {
                     val pkg = call.argument<String>("package")
@@ -144,6 +171,11 @@ abstract class BaseCarActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PHONE_PERMISSION_REQUEST) StatusMonitor.refresh()
     }
 
     /** Ignition ON -> keep screen on. OFF -> system screen timeout turns it off. */

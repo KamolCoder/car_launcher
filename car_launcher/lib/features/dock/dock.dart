@@ -6,15 +6,9 @@ import '../../core/platform/native_bridge.dart';
 import '../../core/theme.dart';
 
 class Dock extends StatelessWidget {
-  const Dock({super.key, required this.onSettings, this.compact = false, this.dashboard = false});
+  const Dock({super.key, required this.onSettings});
 
   final VoidCallback onSettings;
-
-  /// Narrow layout (split screen).
-  final bool compact;
-
-  /// Running in DashboardActivity: show "full screen" instead of apps that would cover it.
-  final bool dashboard;
 
   Future<void> _openNavigator(BuildContext context) async {
     final ok = await NativeBridge.openSplit(AppConfig.yandexNavigator);
@@ -36,33 +30,23 @@ class Dock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigator = _DockItem(Icons.navigation_rounded, 'Навигатор', () => _openNavigator(context));
-    final settings = _DockItem(Icons.settings_rounded, 'Настройки', onSettings);
-
-    final items = dashboard
-        ? <_DockItem>[
-            navigator,
-            _DockItem(Icons.phone_rounded, 'Телефон', NativeBridge.openDialer),
-            _DockItem(Icons.fullscreen_rounded, 'Полный экран', NativeBridge.exitSplit),
-            settings,
-          ]
-        : <_DockItem>[
-      navigator,
+    final items = <_DockItem>[
+      _DockItem(Icons.navigation_rounded, 'Навигатор', () => _openNavigator(context)),
       _DockItem(Icons.map_rounded, 'Карты',
           () => _launch(context, AppConfig.yandexMaps, 'Яндекс Карты')),
       _DockItem(Icons.music_note_rounded, 'Музыка',
           () => _launch(context, AppConfig.yandexMusic, 'Яндекс Музыка')),
       _DockItem(Icons.phone_rounded, 'Телефон', NativeBridge.openDialer),
-      settings,
+      _DockItem(Icons.settings_rounded, 'Настройки', onSettings),
     ];
 
     return SizedBox(
-      height: compact ? 88 : 112,
+      height: 112,
       child: Row(
         children: [
           for (var i = 0; i < items.length; i++) ...[
             if (i > 0) const SizedBox(width: 12),
-            Expanded(child: _DockButton(item: items[i], compact: compact)),
+            Expanded(child: _DockButton(item: items[i])),
           ],
         ],
       ),
@@ -79,10 +63,9 @@ class _DockItem {
 }
 
 class _DockButton extends StatelessWidget {
-  const _DockButton({required this.item, required this.compact});
+  const _DockButton({required this.item});
 
   final _DockItem item;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -98,13 +81,13 @@ class _DockButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(item.icon, size: compact ? 36 : 44),
-            SizedBox(height: compact ? 4 : 6),
+            Icon(item.icon, size: 44),
+            const SizedBox(height: 6),
             Text(
               item.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: compact ? 16 : 20),
+              style: const TextStyle(fontSize: 20),
             ),
           ],
         ),

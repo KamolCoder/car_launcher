@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/platform/native_bridge.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/status_bar.dart';
 import '../dock/dock.dart';
 import '../info/info_panel.dart';
 import '../music/music_panel.dart';
@@ -18,7 +19,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
-  /// Below this width (dp) the split-screen layout is used.
+  /// Below this width (dp) the split-screen layout (music buttons only) is used.
   static const _compactWidth = 900.0;
 
   bool _setupOk = true;
@@ -72,19 +73,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final compact = constraints.maxWidth < _compactWidth;
-              final gap = compact ? 16.0 : 20.0;
+              final split = constraints.maxWidth < _compactWidth;
+              const gap = 20.0;
               return Padding(
-                padding: EdgeInsets.all(gap),
+                padding: const EdgeInsets.fromLTRB(gap, 12, gap, gap),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (!_setupOk) ...[
+                    _TopRow(showFullScreen: dashboard),
+                    const SizedBox(height: 12),
+                    if (!_setupOk && !split) ...[
                       _SetupBanner(onTap: _openSetup),
                       const SizedBox(height: 16),
                     ],
-                    Expanded(child: compact ? _compactBody(gap) : _wideBody(gap)),
-                    SizedBox(height: gap),
-                    Dock(onSettings: _openSetup, compact: compact, dashboard: dashboard),
+                    Expanded(child: split ? const MusicSplitPanel() : _wideBody(gap)),
+                    if (!split) ...[
+                      const SizedBox(height: gap),
+                      Dock(onSettings: _openSetup),
+                    ],
                   ],
                 ),
               );
@@ -104,16 +110,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           const Expanded(flex: 2, child: InfoPanel()),
         ],
       );
+}
 
-  /// Split screen: music on top, clock + speed in one row below.
-  Widget _compactBody(double gap) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+/// "Full screen" (dashboard only) on the left, status bar on the right.
+class _TopRow extends StatelessWidget {
+  const _TopRow({required this.showFullScreen});
+
+  final bool showFullScreen;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: Row(
         children: [
-          const Expanded(flex: 3, child: MusicPanel(compact: true)),
-          SizedBox(height: gap),
-          const Expanded(flex: 2, child: InfoPanel(horizontal: true)),
+          if (showFullScreen)
+            IconButton(
+              onPressed: NativeBridge.exitSplit,
+              iconSize: 36,
+              padding: EdgeInsets.zero,
+              color: AppColors.textSecondary,
+              tooltip: 'Полный экран',
+              icon: const Icon(Icons.fullscreen_rounded),
+            ),
+          const Spacer(),
+          const StatusBar(),
         ],
-      );
+      ),
+    );
+  }
 }
 
 class _SetupBanner extends StatelessWidget {

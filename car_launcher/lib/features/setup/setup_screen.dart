@@ -22,6 +22,7 @@ class _SetupStatus {
     required this.defaultLauncher,
     required this.battery,
     required this.lockAdmin,
+    required this.phone,
   });
 
   final bool notifications;
@@ -30,6 +31,7 @@ class _SetupStatus {
   final bool defaultLauncher;
   final bool battery;
   final bool lockAdmin;
+  final bool phone;
 }
 
 class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingObserver {
@@ -62,6 +64,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
       NativeBridge.isDefaultLauncher(),
       NativeBridge.isIgnoringBatteryOptimizations(),
       NativeBridge.isLockAdmin(),
+      NativeBridge.hasPhonePermission(),
     ]);
     if (!mounted) return;
     setState(() => _status = _SetupStatus(
@@ -71,6 +74,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
           defaultLauncher: r[3],
           battery: r[4],
           lockAdmin: r[5],
+          phone: r[6],
         ));
   }
 
@@ -84,6 +88,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
     if (p == LocationPermission.deniedForever) await Geolocator.openAppSettings();
     ref.invalidate(speedProvider);
     await _refresh();
+  }
+
+  Future<void> _fixPhone() async {
+    await NativeBridge.requestPhonePermission();
+    // Result arrives asynchronously; the permission dialog pauses the app -> resumed -> _refresh()
   }
 
   @override
@@ -134,6 +143,12 @@ class _SetupScreenState extends ConsumerState<SetupScreen> with WidgetsBindingOb
                   subtitle: 'Планшет блокируется сразу после выключения зажигания (администратор устройства)',
                   ok: s.lockAdmin,
                   onFix: NativeBridge.requestLockAdmin,
+                ),
+                _SetupTile(
+                  title: 'Тип сети',
+                  subtitle: 'Подпись LTE / 5G в строке статуса (полоски сигнала работают и без этого)',
+                  ok: s.phone,
+                  onFix: _fixPhone,
                 ),
                 const SizedBox(height: 12),
                 const Panel(
