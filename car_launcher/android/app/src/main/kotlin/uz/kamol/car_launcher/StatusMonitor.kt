@@ -209,13 +209,13 @@ object StatusMonitor {
     }
 
     @TargetApi(Build.VERSION_CODES.S)
-    private open inner class SignalOnlyCallback : TelephonyCallback(), TelephonyCallback.SignalStrengthsListener {
+    private open class SignalOnlyCallback : TelephonyCallback(), TelephonyCallback.SignalStrengthsListener {
         override fun onSignalStrengthsChanged(signalStrength: SignalStrength) = onSignal(signalStrength)
     }
 
     /** Needs READ_PHONE_STATE for the network type (LTE / 5G). */
     @TargetApi(Build.VERSION_CODES.S)
-    private inner class PhoneCallback : SignalOnlyCallback(), TelephonyCallback.DisplayInfoListener {
+    private class PhoneCallback : SignalOnlyCallback(), TelephonyCallback.DisplayInfoListener {
         override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) =
             onDisplayInfo(telephonyDisplayInfo)
     }
